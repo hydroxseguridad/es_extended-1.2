@@ -1,9 +1,9 @@
 RegisterNetEvent('esx:playerJoined')
-AddEventHandler('esx:playerJoined', function()
-	onPlayerJoined(source)
+AddEventHandler('esx:playerJoined', function(cid, data)
+	onPlayerJoined(source, cid, data)
 end)
 
-function onPlayerJoined(playerId)
+function onPlayerJoined(playerId, citizenid, data)
 	local identifier
 
 	for k,v in ipairs(GetPlayerIdentifiers(playerId)) do
@@ -13,17 +13,23 @@ function onPlayerJoined(playerId)
 		end
 	end
 
-	if identifier then
-		MySQL.Async.fetchScalar('SELECT 1 FROM users WHERE identifier = @identifier', {
-			['@identifier'] = identifier
+	if identifier and citizenid then
+		MySQL.Async.fetchScalar('SELECT 1 FROM users WHERE citizenid = @citizenid', {
+			['@citizenid'] = citizenid
 		}, function(result)
 			if result then
-				loadESXPlayer(identifier, playerId)
+				loadESXPlayer(identifier, citizenid, playerId)
 			else
-				MySQL.Async.execute('INSERT INTO users (identifier) VALUES (@identifier)', {
-					['@identifier'] = identifier
+				MySQL.Async.execute('INSERT INTO users (identifier, citizenid, queue, firstname, lastname, dateofbirth, sex) VALUES (@identifier, @citizenid, @queue, @firstname, @lastname, @dateofbirth, @sex)', {
+					['@identifier'] = identifier,
+					['@citizenid'] = citizenid, 
+					['@firstname'] = data.firstname,
+					['@lastname'] = data.lastname,
+					['@queue'] = data.queue,
+					['@dateofbirth'] = data.dateofbirth,
+					['@sex'] = data.sex,
 				}, function(rowsChanged)
-					loadESXPlayer(identifier, playerId)
+					loadESXPlayer(identifier, citizenid, playerId)
 				end)
 			end
 		end)
@@ -32,7 +38,7 @@ function onPlayerJoined(playerId)
 	end
 end
 
-function loadESXPlayer(identifier, playerId)
+function loadESXPlayer(identifier, citizenid, playerId)
 	local tasks = {}
 
 	local userData = {
@@ -46,7 +52,7 @@ function loadESXPlayer(identifier, playerId)
 	-- get accounts
 	table.insert(tasks, function(cb)
 		MySQL.Async.fetchAll('SELECT name, money FROM user_accounts WHERE identifier = @identifier', {
-			['@identifier'] = identifier
+			['@identifier'] = citizenid
 		}, function(accounts)
 			for k,v in ipairs(accounts) do
 				if Config.Accounts[v.name] then
@@ -63,8 +69,8 @@ function loadESXPlayer(identifier, playerId)
 	end)
 
 	table.insert(tasks, function(cb)
-		MySQL.Async.fetchAll('SELECT job, job_grade, `group`, loadout, position, inventory FROM users WHERE identifier = @identifier', {
-			['@identifier'] = identifier
+		MySQL.Async.fetchAll('SELECT job, job_grade, `group`, loadout, position, inventory FROM users WHERE citizenid = @citizenid', {
+			['@citizenid'] = citizenid
 		}, function(result)
 			local job, grade, jobObject, gradeObject = result[1].job, tostring(result[1].job_grade)
 
@@ -155,7 +161,7 @@ function loadESXPlayer(identifier, playerId)
 	end)
 
 	Async.parallel(tasks, function(results)
-		local xPlayer = CreateExtendedPlayer(playerId, identifier, userData.group, userData.accounts, userData.inventory, userData.job, userData.loadout, userData.playerName, userData.coords)
+		local xPlayer = CreateExtendedPlayer(playerId, identifier, citizenid, userData.group, userData.accounts, userData.inventory, userData.job, userData.loadout, userData.playerName, userData.coords)
 
 		xPlayer.getMissingAccounts(function(missingAccounts)
 			if #missingAccounts > 0 then
@@ -175,9 +181,9 @@ function loadESXPlayer(identifier, playerId)
 
 			xPlayer.triggerEvent('esx:playerLoaded', {
 				identifier = xPlayer.identifier,
-				money = xPlayer.getMoney(),
 				accounts = xPlayer.getAccounts(),
 				coords = xPlayer.getCoords(),
+				citizenid = xPlayer.citizenid,
 				inventory = xPlayer.getInventory(),
 				job = xPlayer.getJob(),
 				loadout = xPlayer.getLoadout(),

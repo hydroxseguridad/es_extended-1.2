@@ -1,4 +1,4 @@
-function CreateExtendedPlayer(playerId, identifier, group, accounts, inventory, job, loadout, name, coords)
+function CreateExtendedPlayer(playerId, identifier, citizenid, group, accounts, inventory, job, loadout, name, coords)
 	local self = {}
 
 	self.accounts = accounts
@@ -13,6 +13,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, inventory, 
 	self.source = playerId
 	self.playerId = playerId
 	self.identifier = identifier
+	self.citizenid = citizenid
 
 	ExecuteCommand(('add_principal identifier.license:%s group.%s'):format(self.identifier, self.group))
 
@@ -149,7 +150,7 @@ function CreateExtendedPlayer(playerId, identifier, group, accounts, inventory, 
 	self.createMissingAccounts = function(missingAccounts, cb)
 		for k,v in ipairs(missingAccounts) do
 			MySQL.Async.execute('INSERT INTO user_accounts (identifier, name) VALUES (@identifier, @name)', {
-				['@identifier'] = self.identifier,
+				['@identifier'] = self.citizenid,
 				['@name'] = v
 			}, function(rowsChanged)
 				if cb then

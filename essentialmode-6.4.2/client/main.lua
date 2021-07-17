@@ -4,19 +4,19 @@
 
 local enablePositionSending = true
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(0)
+-- Citizen.CreateThread(function()
+-- 	while true do
+-- 		Citizen.Wait(0)
 
-		if NetworkIsSessionStarted() then
-			TriggerServerEvent('es:firstJoinProper')
-			TriggerEvent('es:allowedToSpawn')
-			return
-		end
-	end
-end)
+-- 		if NetworkIsSessionStarted() then
+-- 			TriggerServerEvent('es:firstJoinProper')
+-- 			TriggerEvent('es:allowedToSpawn')
+-- 			return
+-- 		end
+-- 	end
+-- end)
 
-TriggerServerEvent('es:firstJoinProper')
+-- TriggerServerEvent('es:firstJoinProper')
 
 local oldPos
 

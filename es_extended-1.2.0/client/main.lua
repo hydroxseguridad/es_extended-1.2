@@ -32,21 +32,24 @@ AddEventHandler('esx:setMaxWeight', function(newMaxWeight)
 	ESX.PlayerData.maxWeight = newMaxWeight
 end)
 
-AddEventHandler('playerSpawned', function()
-	if isFirstSpawn then
-		TriggerServerEvent('esx:playerJoined')
-	end
+
+RegisterNetEvent('esx:CharCreate')
+AddEventHandler('esx:CharCreate', function(cid, data)
+	TriggerServerEvent('esx:playerJoined', cid, data)
 
 	while not ESX.PlayerLoaded do
 		Citizen.Wait(10)
 	end
 
 	TriggerEvent('esx:restoreLoadout')
+	TriggerEvent('esx:onPlayerSpawn')
 
-	if isFirstSpawn then
-		ESX.Game.Teleport(PlayerPedId(), ESX.PlayerData.coords)
-		isFirstSpawn = false
-	end
+	-- if isFirstSpawn then
+		-- ESX.Game.Teleport(PlayerPedId(), ESX.PlayerData.coords)
+		-- isFirstSpawn = false
+	-- end
+
+
 
 	isLoadoutLoaded, isDead = true, false
 
